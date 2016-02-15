@@ -1,0 +1,28 @@
+#!/usr/bin/env python
+
+import getpass
+import urlparse
+from BaseHTTPServer import *
+from ChatExchange import chatexchange
+
+PORT = 11540  # Charcoal HQ's room ID :)
+
+email = raw_input('Email: ')
+password = getpass.getpass('Password: ')
+client = chatexchange.client.Client('stackexchange.com')
+client.login(email, password)
+
+class ChexServer(BaseHTTPRequestHandler):
+    def do_POST(self):
+        content_length = int(self.headers['Content-Length'])
+        data = urlparse.parse_qs(self.rfile.read(content_length).decode('utf-8'))
+        client._br.send_message(data['room_id'][0], data['message'][0])
+        self.send_response(200)
+        self.send_header('Content-Type', 'text/plain')
+        self.end_headers()
+        self.wfile.write(b'success')
+
+try:
+    HTTPServer(('', PORT), ChexServer).serve_forever()
+except KeyboardInterrupt:
+    pass
